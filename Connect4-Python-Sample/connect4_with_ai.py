@@ -3,6 +3,7 @@ import random
 import pygame
 import sys
 import math
+from time import perf_counter 
 
 BLUE = (0,0,255)
 BLACK = (0,0,0)
@@ -202,6 +203,13 @@ def draw_board(board):
 				pygame.draw.circle(screen, YELLOW, (int(c*SQUARESIZE+SQUARESIZE/2), height-int(r*SQUARESIZE+SQUARESIZE/2)), RADIUS)
 	pygame.display.update()
 
+def countdown(t): 
+    
+    while t: 
+        mins, secs = divmod(t, 60) 
+        time.sleep(1) 
+        t -= 1
+
 board = create_board()
 print_board(board)
 game_over = False
@@ -225,47 +233,64 @@ myfont = pygame.font.SysFont("monospace", 75)
 
 turn = random.randint(PLAYER, AI)
 
+select_player = input("Select the one who play first [player,AI] = ")
+if select_player.lower() == "player":
+	turn = 0
+elif select_player.upper() == "AI":
+	turn = 1
+player_score = 0
+ai_score = 0
+
 while not game_over:
+	# start_time = int(perf_counter())
+	while turn == PLAYER:
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				sys.exit()
 
-	for event in pygame.event.get():
-		if event.type == pygame.QUIT:
-			sys.exit()
-
-		if event.type == pygame.MOUSEMOTION:
-			pygame.draw.rect(screen, BLACK, (0,0, width, SQUARESIZE))
-			posx = event.pos[0]
-			if turn == PLAYER:
-				pygame.draw.circle(screen, RED, (posx, int(SQUARESIZE/2)), RADIUS)
-
-		pygame.display.update()
-
-		if event.type == pygame.MOUSEBUTTONDOWN:
-			pygame.draw.rect(screen, BLACK, (0,0, width, SQUARESIZE))
-			#print(event.pos)
-			# Ask for Player 1 Input
-			if turn == PLAYER:
+			if event.type == pygame.MOUSEMOTION:
+				pygame.draw.rect(screen, BLACK, (0,0, width, SQUARESIZE))
 				posx = event.pos[0]
-				col = int(math.floor(posx/SQUARESIZE))
+				if turn == PLAYER:
+					pygame.draw.circle(screen, RED, (posx, int(SQUARESIZE/2)), RADIUS)
 
-				if is_valid_location(board, col):
-					row = get_next_open_row(board, col)
-					drop_piece(board, row, col, PLAYER_PIECE)
+			pygame.display.update()
 
-					if winning_move(board, PLAYER_PIECE):
-						label = myfont.render("Player 1 wins!!", 1, RED)
-						screen.blit(label, (40,10))
-						game_over = True
+			if event.type == pygame.MOUSEBUTTONDOWN:
+			
+				pygame.draw.rect(screen, BLACK, (0,0, width, SQUARESIZE))
+				#print(event.pos)
+				# Ask for Player 1 Input
+				if turn == PLAYER:
+					posx = event.pos[0]
+					col = int(math.floor(posx/SQUARESIZE))
 
-					turn += 1
-					turn = turn % 2
+					if is_valid_location(board, col):
+						row = get_next_open_row(board, col)
+						drop_piece(board, row, col, PLAYER_PIECE)
+						# stop_time = int(perf_counter())
+						#print("stop=" + str(stop_time))
+						if winning_move(board, PLAYER_PIECE):
+							label = myfont.render("Player 1 wins!!", 1, RED)
+							screen.blit(label, (40,10))
+							game_over = True
 
-					print_board(board)
-					draw_board(board)
+						turn += 1
+						turn = turn % 2
 
+						print_board(board)
+						draw_board(board)
+						
+						# print("Player using time in this turn = " + str(stop_time -start_time))
+						# if (stop_time - start_time) > 5:
+						# 	player_score += 1
 
+			
+	
 	# # Ask for Player 2 Input
 	if turn == AI and not game_over:				
-
+		start_time = int(perf_counter())
+		#print("start=" + str(start_time))
 		#col = random.randint(0, COLUMN_COUNT-1)
 		#col = pick_best_move(board, AI_PIECE)
 		col, minimax_score = minimax(board, 5, -math.inf, math.inf, True)
@@ -274,7 +299,8 @@ while not game_over:
 			#pygame.time.wait(500)
 			row = get_next_open_row(board, col)
 			drop_piece(board, row, col, AI_PIECE)
-
+			stop_time = int(perf_counter())
+			#print("stop=" + str(stop_time))
 			if winning_move(board, AI_PIECE):
 				label = myfont.render("Player 2 wins!!", 1, YELLOW)
 				screen.blit(label, (40,10))
@@ -285,6 +311,25 @@ while not game_over:
 
 			turn += 1
 			turn = turn % 2
-
+			
+			print("AI Using time in this turn = " + str(stop_time -start_time))
+			if (stop_time - start_time) > 5:
+				ai_score += 1
+	if (ai_score > 2 ):
+		
+		label = myfont.render("AI timeup, We Win!!", 1, RED)
+		screen.blit(label, (40,10))
+		game_over = True
+		print_board(board)
+		draw_board(board)
+	# elif (player_score > 2 ):
+		
+	# 	label = myfont.render("Player 2 wins by timeup!!", 1, YELLOW)
+	# 	screen.blit(label, (,2))
+	# 	game_over = True
+	# 	print_board(board)
+	# 	draw_board(board)
+	
 	if game_over:
-		pygame.time.wait(3000)
+		pygame.time.wait(12000)
+	
